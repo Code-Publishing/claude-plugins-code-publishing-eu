@@ -1,0 +1,23 @@
+# AGENTS.md - Agent Guidance for {{PROJECT_NAME}}
+
+This file provides context and guidance for AI coding agents working in this project.
+
+## Project Overview
+
+{{PROJECT_DESCRIPTION}}
+
+## Codebase Patterns
+
+<!-- Document patterns discovered during development -->
+
+## Gotchas
+
+<!-- Document common pitfalls and things to remember -->
+
+## Testing Approach
+
+<!-- Document how tests should be written and run -->
+
+## Dependencies
+
+<!-- Document key relationships between modules -->

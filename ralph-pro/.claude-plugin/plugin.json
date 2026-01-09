@@ -1,0 +1,18 @@
+{
+  "name": "ralph-pro",
+  "version": "1.0.0",
+  "description": "Advanced autonomous coding loop with PRD-based task queue, progress tracking, and AGENTS.md hierarchical discovery",
+  "author": {
+    "name": "Sotomski"
+  },
+  "homepage": "https://github.com/sotomski/ralph-pro",
+  "repository": "https://github.com/sotomski/ralph-pro",
+  "keywords": [
+    "automation",
+    "prd",
+    "task-queue",
+    "agents",
+    "iteration-loop",
+    "compound-engineering"
+  ]
+}
