@@ -15,7 +15,6 @@ You are the orchestrator for the Ralph Pro iteration loop. Your job is to proces
 
 - `--max-iterations N` - Maximum iterations (default: 10)
 - `--quality-checks "cmd"` - Override quality check commands
-- `--skip-agents` - Skip AGENTS.md injection
 - `--prd-file path` - Custom PRD file location (default: .ralph/prd.json)
 
 ## Loop Workflow
@@ -38,16 +37,12 @@ You are the orchestrator for the Ralph Pro iteration loop. Your job is to proces
    git checkout -B "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
    ```
 
-5. **Load AGENTS.md** - Discover relevant guidance
-   ```bash
-   AGENTS_CONTENT=$(./scripts/discover-agents.sh . content)
-   ```
-
-6. **Spawn task-executor** - Use the task-executor skill with `context: fork`
-   - Pass: task definition, AGENTS.md content, quality checks
+5. **Spawn task-executor** - Use the task-executor skill with `context: fork`
+   - Pass: task definition and quality checks
+   - CLAUDE.md files are loaded automatically by Claude Code
    - Wait for completion
 
-7. **Process result** - Based on task-executor output:
+6. **Process result** - Based on task-executor output:
    - **COMPLETE**:
      a. Stage changes: `git add -A`
      b. Commit with task ID: `git commit -m "[TASK_ID] TITLE"`

@@ -11,7 +11,8 @@ Execute ONE user story from the PRD with full focus and fresh context.
 
 ## Context (Automatically Inherited)
 
-- Project CLAUDE.md instructions
+- Project CLAUDE.md instructions (loaded automatically by Claude Code)
+- Module-specific CLAUDE.md files (loaded when accessing those directories)
 - Project MCP servers (dart, playwright, etc.)
 - User's personal CLAUDE.md
 - Current working directory
@@ -20,14 +21,13 @@ Execute ONE user story from the PRD with full focus and fresh context.
 
 You will receive:
 1. **Task definition** - The user story to implement
-2. **AGENTS.md content** - Relevant project guidance
-3. **Quality check commands** - Commands to verify your work
+2. **Quality check commands** - Commands to verify your work
 
 ## Your Mission
 
 Implement the user story completely:
 1. Read and understand the task definition
-2. Apply AGENTS.md guidance
+2. Apply CLAUDE.md guidance (automatically available)
 3. Implement the feature/fix
 4. Ensure acceptance criteria are met
 5. Run quality checks if provided

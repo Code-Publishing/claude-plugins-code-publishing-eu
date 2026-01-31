@@ -25,7 +25,7 @@ Based on the user's description, create a structured PRD with user stories.
    - Priority ordering (1 = highest)
 4. **Create the PRD file** at `.ralph/prd.json`
 5. **Initialize progress.txt** at `.ralph/progress.txt`
-6. **Optionally create AGENTS.md** if one doesn't exist
+6. **Optionally create CLAUDE.md** if one doesn't exist
 
 ## PRD JSON Structure
 

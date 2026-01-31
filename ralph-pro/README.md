@@ -1,12 +1,12 @@
 # Ralph Pro
 
-Advanced autonomous coding loop for Claude Code with PRD-based task queue, progress tracking, and AGENTS.md hierarchical discovery.
+Advanced autonomous coding loop for Claude Code with PRD-based task queue, progress tracking, and CLAUDE.md hierarchical discovery.
 
 ## Features
 
 - **PRD-based task queue**: Define features as user stories with acceptance criteria
 - **Progress tracking**: Append-only learning log across iterations
-- **AGENTS.md discovery**: Hierarchical project guidance without context pollution
+- **CLAUDE.md discovery**: Hierarchical project guidance without context pollution
 - **Fresh context per task**: Each task executes in a clean subagent context
 - **One commit per task**: Clean git history with meaningful commits
 - **Project-specific config**: Inherits CLAUDE.md, MCP servers, and quality checks
@@ -49,7 +49,6 @@ This creates:
 Options:
 - `--max-iterations 20` - Safety limit (default: 10)
 - `--quality-checks "npm test"` - Override quality checks
-- `--skip-agents` - Disable AGENTS.md injection
 
 ### 3. Check Progress
 
@@ -72,8 +71,9 @@ Parent Session (orchestrator)
 └── Loop: Until all tasks pass or max iterations
 
 Subagent (task-executor)
-├── Fresh context: Only sees current task + AGENTS.md
+├── Fresh context: CLAUDE.md loaded automatically by Claude Code
 ├── Works: Implements single user story
+├── Updates: Creates/updates CLAUDE.md with discovered patterns
 ├── Returns: Completion status + learnings
 └── Exits: Parent captures result, commits changes
 ```
@@ -107,24 +107,24 @@ Subagent (task-executor)
 }
 ```
 
-## AGENTS.md Pattern
+## CLAUDE.md Pattern
 
-Create `AGENTS.md` files in your project for hierarchical guidance:
+Create `CLAUDE.md` files in your project for hierarchical guidance:
 
 ```
 project-root/
-├── AGENTS.md              # Project-wide patterns
+├── CLAUDE.md              # Project-wide patterns
 └── src/
     └── auth/
-        └── AGENTS.md      # Auth-specific guidance
+        └── CLAUDE.md      # Auth-specific guidance
 ```
 
-The plugin automatically discovers and injects relevant AGENTS.md content based on the files being modified.
+Claude Code automatically loads relevant CLAUDE.md files when working in those directories. The task-executor agent is instructed to create/update CLAUDE.md files when discovering reusable patterns during implementation.
 
-Example `AGENTS.md`:
+Example `CLAUDE.md`:
 
 ```markdown
-# AGENTS.md - Auth Module
+# CLAUDE.md - Auth Module
 
 ## Patterns
 - Use bcrypt for password hashing
@@ -143,7 +143,7 @@ Example `AGENTS.md`:
 
 | File | Lifecycle | Behavior |
 |------|-----------|----------|
-| `AGENTS.md` | Project lifetime | Never reset, accumulates patterns |
+| `CLAUDE.md` | Project lifetime | Never reset, accumulates patterns |
 | `prd.json` | Loop duration | Reset when new loop starts |
 | `progress.txt` | Loop duration | Archived when loop completes |
 
@@ -156,7 +156,7 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | Task queue | Single prompt | PRD with user stories |
 | Progress log | None | Append-only progress.txt |
 | Context | Same session | Fresh per task (subagent) |
-| AGENTS.md | None | Hierarchical discovery |
+| CLAUDE.md updates | None | Auto-updates with patterns |
 | Commits | User-controlled | Automatic per task |
 
 ## Commands
@@ -173,7 +173,6 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | Skill | Description |
 |-------|-------------|
 | `task-executor` | Executes single user story (context: fork) |
-| `agents-discovery` | Discovers relevant AGENTS.md files |
 
 ## Scripts
 
@@ -182,7 +181,6 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | `select-next-task.sh` | Get highest priority pending task |
 | `update-task-status.sh` | Update task completion status |
 | `append-progress.sh` | Log entry to progress.txt |
-| `discover-agents.sh` | Find relevant AGENTS.md files |
 | `check-quality.sh` | Run quality check commands |
 | `archive-session.sh` | Archive completed session |
 
@@ -213,4 +211,4 @@ MIT
 Inspired by:
 - [Ralph](https://github.com/snarktank/ralph) - Original Ampcode automation
 - [Ralph Wiggum](https://github.com/anthropics/claude-code/tree/main/plugins/ralph-wiggum) - Official Claude Code plugin
-- [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin) - AGENTS.md pattern
+- [Compound Engineering](https://github.com/EveryInc/compound-engineering-plugin) - CLAUDE.md pattern
