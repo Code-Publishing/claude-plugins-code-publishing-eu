@@ -29,7 +29,7 @@ Or configure in `~/.claude/settings.json`:
 
 ### ralph-pro
 
-Advanced autonomous coding loop with PRD-based task queue, progress tracking, and AGENTS.md hierarchical discovery.
+Advanced autonomous coding loop with PRD-based task queue, progress tracking, and CLAUDE.md hierarchical discovery.
 
 **Install:**
 ```bash
@@ -39,7 +39,7 @@ Advanced autonomous coding loop with PRD-based task queue, progress tracking, an
 **Features:**
 - PRD-based task queue with user stories and acceptance criteria
 - Progress tracking with append-only learning log
-- AGENTS.md hierarchical discovery for context-efficient guidance
+- CLAUDE.md hierarchical discovery for context-efficient guidance
 - Fresh context per task via subagent
 - One commit per completed task
 - Project-specific quality checks

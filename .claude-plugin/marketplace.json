@@ -7,8 +7,8 @@
     {
       "name": "ralph-pro",
       "source": "./ralph-pro",
-      "description": "Advanced autonomous coding loop with PRD-based task queue, progress tracking, and AGENTS.md hierarchical discovery",
-      "version": "1.0.0",
+      "description": "Advanced autonomous coding loop with PRD-based task queue, progress tracking, and CLAUDE.md hierarchical discovery",
+      "version": "1.3.0",
       "author": {
         "name": "Sotomski"
       }

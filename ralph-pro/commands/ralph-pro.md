@@ -4,7 +4,20 @@ description: Start the Ralph Pro iteration loop to process user stories from the
 
 # Ralph Pro Iteration Loop
 
-You are the orchestrator for the Ralph Pro iteration loop. Your job is to process user stories from the PRD one at a time using subagents.
+You are the orchestrator for the Ralph Pro iteration loop. Your ONLY job is to manage the loop and delegate ALL work to task-executor subagents.
+
+## Context Preservation Rules
+
+Your context window is precious. To avoid compaction across iterations, follow these rules strictly:
+
+- **NEVER** read implementation/source files yourself
+- **NEVER** run code, tests, or quality checks yourself
+- **NEVER** modify source files yourself
+- **NEVER** do git add, git commit, or update PRD/progress files yourself
+- **ONLY** read `.ralph/prd.json` to check task status and select next task
+- **ALL** implementation, verification, committing, PRD updates, progress logging, and CLAUDE.md updates are done by the task-executor
+
+Your per-iteration work should be minimal: read PRD, spawn subagent, check result, loop.
 
 ## Prerequisites
 
@@ -14,73 +27,44 @@ You are the orchestrator for the Ralph Pro iteration loop. Your job is to proces
 ## Arguments
 
 - `--max-iterations N` - Maximum iterations (default: 10)
-- `--quality-checks "cmd"` - Override quality check commands
 - `--prd-file path` - Custom PRD file location (default: .ralph/prd.json)
 
 ## Loop Workflow
 
 ### For each iteration:
 
-1. **Read PRD** - Load `.ralph/prd.json`
+1. **Read PRD** - Load `.ralph/prd.json` to get task list and branch name
 
 2. **Select next task** - Find highest priority task with `passes: false`
-   ```bash
-   # Use the select-next-task.sh script
-   NEXT_TASK=$(./scripts/select-next-task.sh .ralph/prd.json)
-   ```
+   - If no pending tasks remain, go to Completion
 
-3. **Check completion** - If no pending tasks, archive and exit
-
-4. **Ensure branch** - Check/create feature branch from `prd.branchName`
+3. **Ensure branch** - Check/create feature branch from `prd.branchName`
    ```bash
    BRANCH=$(jq -r '.branchName' .ralph/prd.json)
    git checkout -B "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
    ```
 
-5. **Spawn task-executor** - Use the task-executor skill with `context: fork`
-   - Pass: task definition and quality checks
-   - CLAUDE.md files are loaded automatically by Claude Code
+4. **Spawn task-executor** - Use the task-executor skill with `context: fork`
+   - Pass the task definition (ID, title, description, acceptance criteria)
+   - Pass the quality check commands from `prd.qualityChecks`
+   - The task-executor handles EVERYTHING: implementation, quality checks, git commit, PRD update, progress log, CLAUDE.md updates
    - Wait for completion
 
-6. **Process result** - Based on task-executor output:
-   - **COMPLETE**:
-     a. Stage changes: `git add -A`
-     b. Commit with task ID: `git commit -m "[TASK_ID] TITLE"`
-     c. Get commit hash
-     d. Update prd.json: mark passes=true, store commitHash
-     e. Log to progress.txt
+5. **Check result** - Read the task-executor's final status line:
+   - **COMPLETE**: Log iteration success, continue to next task
    - **INCOMPLETE**: Log progress, continue to next iteration
    - **BLOCKED**: Log reason, ask user for input
 
-8. **Quality checks** - Run quality check commands
-   ```bash
-   for cmd in $(jq -r '.qualityChecks[]' .ralph/prd.json); do
-     eval "$cmd"
-   done
-   ```
+6. **Re-read PRD** - Reload `.ralph/prd.json` to see updated task statuses
 
-9. **Continue or exit** - If more tasks and under max iterations, repeat
+7. **Continue or exit** - If more pending tasks and under max iterations, repeat from step 1
 
 ### Completion
 
 When all tasks pass or max iterations reached:
 1. Archive prd.json and progress.txt to `.ralph/archive/{date}-{branch}/`
-2. Summarize results
+2. Summarize results (tasks completed / total)
 3. Exit loop
-
-## Commit Message Format
-
-```
-[US-001] Brief title of the story
-
-Implements user story: "As a user, I want..."
-
-Acceptance criteria met:
-- [x] Criterion 1
-- [x] Criterion 2
-
-🤖 Generated with Ralph Pro
-```
 
 ## Example Session
 
@@ -94,42 +78,39 @@ Tasks: 4 pending, 0 completed
 --- Iteration 1/10 ---
 Task: US-001 - User registration endpoint
 Spawning task-executor...
-[task-executor works on the task]
+[task-executor implements, tests, commits, updates PRD]
 Result: COMPLETE
-
-Committing: [US-001] User registration endpoint
-Commit: abc1234
-
-Quality checks:
-- npm test: PASSED
-- npm run lint: PASSED
 
 Progress: 1/4 tasks complete
 
 --- Iteration 2/10 ---
 Task: US-002 - User login endpoint
+Spawning task-executor...
+[task-executor implements, tests, commits, updates PRD]
+Result: COMPLETE
+
+Progress: 2/4 tasks complete
 ...
 ```
 
 ## Important Notes
 
-1. **Fresh context per task**: Each task-executor has clean context
-2. **Parent tracks state**: PRD and progress are managed by the parent
-3. **One commit per task**: Clean git history
-4. **Automatic archiving**: Completed loops are preserved
+1. **You are a thin loop**: Your only job is spawn subagents and track iteration count
+2. **Fresh context per task**: Each task-executor has clean context via `context: fork`
+3. **Task-executor owns all work**: Implementation, commits, PRD updates, progress — all delegated
+4. **One commit per task**: Enforced by task-executor, not by you
 5. **User can intervene**: BLOCKED status pauses for input
 
 ## Error Handling
 
-- **Quality check failure**: Do NOT mark task complete, log failure, continue
+- **Task-executor reports INCOMPLETE**: Log it, continue to next iteration
+- **Task-executor reports BLOCKED**: Stop and ask user
 - **Git conflict**: Stop and ask user
-- **Max iterations**: Archive and report incomplete tasks
-- **Subagent failure**: Log error, mark task incomplete, continue
+- **Max iterations reached**: Archive and report incomplete tasks
 
 ## Interaction with User
 
-Keep the user informed:
-- Show current iteration and task
-- Display progress after each task
-- Report quality check results
+Keep the user informed with minimal output:
+- Show current iteration number and task ID/title
+- Display progress count after each task (e.g., "3/5 tasks complete")
 - Summarize at completion

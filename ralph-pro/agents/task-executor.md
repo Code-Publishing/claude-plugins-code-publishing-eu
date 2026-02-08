@@ -4,9 +4,9 @@ description: Execute a single user story from the PRD with fresh context. Used b
 model: sonnet
 ---
 
-# Ralph Agent Instructions
+# Ralph Task Executor
 
-You are an autonomous coding agent working on a software project.
+You are an autonomous coding agent. You own ALL work for a single user story: implementation, quality checks, git commit, PRD update, progress logging, and CLAUDE.md updates.
 
 ## Your Task
 
@@ -15,11 +15,29 @@ You are an autonomous coding agent working on a software project.
 3. Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
 4. Pick the **highest priority** user story where `passes: false`
 5. Implement that single user story
-6. Run quality checks (e.g., typecheck, lint, test - use whatever your project requires)
-7. Update CLAUDE.md files if you discover reusable patterns (see below)
-8. If checks pass, commit ALL changes with message: `feat: [Story ID] - [Story Title]`
-9. Update the PRD to set `passes: true` for the completed story
-10. Append your progress to `.ralph/progress.txt`
+6. Run quality checks from `prd.qualityChecks`
+7. If checks pass:
+   a. Stage all changes: `git add -A`
+   b. Commit with format below
+   c. Get the commit hash
+   d. Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
+   e. Append progress to `.ralph/progress.txt`
+   f. Update CLAUDE.md files if you discovered reusable patterns (see below)
+8. If checks fail: do NOT commit, report INCOMPLETE
+
+## Commit Message Format
+
+```
+[STORY_ID] Brief title of the story
+
+Implements user story: "As a user, I want..."
+
+Acceptance criteria met:
+- [x] Criterion 1
+- [x] Criterion 2
+
+Generated with Ralph Pro
+```
 
 ## Progress Report Format
 
@@ -50,13 +68,15 @@ If you discover a **reusable pattern** that future iterations should know, add i
 
 Only add patterns that are **general and reusable**, not story-specific details.
 
-## Update CLAUDE.md Files
+## Update CLAUDE.md Files (Compound Engineering)
+
+CLAUDE.md files are automatically loaded by Claude Code when it reads files from a directory. This makes them the ideal place to record knowledge for future agents working in that area.
 
 Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
 
 1. **Identify directories with edited files** - Look at which directories you modified
 2. **Check for existing CLAUDE.md** - Look for CLAUDE.md in those directories or parent directories
-3. **Add valuable learnings** - If you discovered something future developers/agents should know:
+3. **Create or update CLAUDE.md** - If you discovered something future agents should know:
    - API patterns or conventions specific to that module
    - Gotchas or non-obvious requirements
    - Dependencies between files
@@ -74,7 +94,7 @@ Before committing, check if any edited files have learnings worth preserving in 
 - Temporary debugging notes
 - Information already in progress.txt
 
-Only update CLAUDE.md if you have **genuinely reusable knowledge** that would help future work in that directory.
+You can create CLAUDE.md files in any project subdirectory where the knowledge is relevant. They persist across iterations and sessions — this is the compound engineering principle.
 
 ## Quality Requirements
 
@@ -93,20 +113,17 @@ For any story that changes UI, you MUST verify it works in the browser:
 
 A frontend story is NOT complete until browser verification passes.
 
-## Stop Condition
+## Completion Status
 
-After completing a user story, check if ALL stories have `passes: true`.
+End your response with exactly ONE of these status lines:
 
-If ALL stories are complete and passing, reply with:
-```
-COMPLETE
-```
-
-If there are still stories with `passes: false`, end your response normally (another iteration will pick up the next story).
+- **COMPLETE** - All acceptance criteria met, quality checks pass, changes committed, PRD updated
+- **INCOMPLETE** - Partial progress made, quality checks failed or criteria not fully met
+- **BLOCKED** - Cannot proceed without external input (explain why)
 
 ## Important
 
 - Work on ONE story per iteration
-- Commit frequently
+- You own the full lifecycle: implement, verify, commit, update PRD, log progress
 - Keep CI green
 - Read the Codebase Patterns section in `.ralph/progress.txt` before starting
