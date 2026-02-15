@@ -26,6 +26,13 @@ mkdir -p "$ARCHIVE_DIR"
 cp "$PRD_FILE" "$ARCHIVE_DIR/"
 [[ -f "$PROGRESS_FILE" ]] && cp "$PROGRESS_FILE" "$ARCHIVE_DIR/"
 
+# Copy story spec files if they exist
+STORIES_DIR="${RALPH_DIR}/stories"
+if [[ -d "$STORIES_DIR" ]]; then
+    cp -r "$STORIES_DIR" "$ARCHIVE_DIR/"
+    echo "Story specs archived from: $STORIES_DIR"
+fi
+
 # Report
 echo "Session archived to: $ARCHIVE_DIR"
 

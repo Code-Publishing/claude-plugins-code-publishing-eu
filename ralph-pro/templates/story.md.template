@@ -1,0 +1,35 @@
+# {{STORY_ID}}: {{STORY_TITLE}}
+
+## Description
+{{STORY_DESCRIPTION}}
+
+## Acceptance Criteria
+{{ACCEPTANCE_CRITERIA}}
+
+## Context Files (Read These First)
+{{CONTEXT_FILES}}
+
+## Architecture
+
+### Approach
+{{APPROACH}}
+
+### Rationale
+{{RATIONALE}}
+
+### Files to Create/Modify
+| Path | Action | Purpose |
+|------|--------|---------|
+{{FILES_TABLE}}
+
+### Constraints
+{{CONSTRAINTS}}
+
+### Implementation Steps
+{{IMPLEMENTATION_STEPS}}
+
+### Test Cases
+{{TEST_CASES}}
+
+### Type Signatures
+{{TYPE_SIGNATURES}}

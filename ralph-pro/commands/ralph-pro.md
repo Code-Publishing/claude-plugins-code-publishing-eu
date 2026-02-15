@@ -22,18 +22,20 @@ Your per-iteration work should be minimal: read PRD, spawn subagent, check resul
 ## Prerequisites
 
 - `.ralph/prd.json` must exist (created by `/prd-init`)
+- `.ralph/stories/` must contain story spec files (created by `/prd-init`)
 - Git repository should be initialized
 
 ## Arguments
 
 - `--max-iterations N` - Maximum iterations (default: 10)
 - `--prd-file path` - Custom PRD file location (default: .ralph/prd.json)
+- `--model [sonnet|opus|haiku]` - Override executor model (default: sonnet)
 
 ## Loop Workflow
 
 ### For each iteration:
 
-1. **Read PRD** - Load `.ralph/prd.json` to get task list and branch name
+1. **Read PRD** - Load `.ralph/prd.json` to get task list, branch name, and quality checks
 
 2. **Select next task** - Find highest priority task with `passes: false`
    - If no pending tasks remain, go to Completion
@@ -45,10 +47,23 @@ Your per-iteration work should be minimal: read PRD, spawn subagent, check resul
    ```
 
 4. **Spawn task-executor** - Use the task-executor skill with `context: fork`
-   - Pass the task definition (ID, title, description, acceptance criteria)
-   - Pass the quality check commands from `prd.qualityChecks`
-   - The task-executor handles EVERYTHING: implementation, quality checks, git commit, PRD update, progress log, CLAUDE.md updates
-   - Wait for completion
+
+   Pass to the executor:
+   - **Branch name** from `prd.branchName`
+   - **Quality checks** from `prd.qualityChecks`
+   - **Story file path**: `.ralph/stories/PRD-{STORY_ID}.md` (e.g., `.ralph/stories/PRD-US-001.md`)
+   - **Model override** if `--model` was specified (pass as part of the task prompt)
+
+   Example prompt to executor:
+   ```
+   Branch: feature/user-auth
+   Quality checks: npm test, npm run lint
+   Story file: .ralph/stories/PRD-US-001.md
+
+   Execute this user story following the instructions in your SKILL.md.
+   ```
+
+   The task-executor handles EVERYTHING: reading story spec, reading context files, implementation, quality checks, git commit, PRD update, progress log, CLAUDE.md updates.
 
 5. **Check result** - Read the task-executor's final status line:
    - **COMPLETE**: Log iteration success, continue to next task
@@ -62,7 +77,7 @@ Your per-iteration work should be minimal: read PRD, spawn subagent, check resul
 ### Completion
 
 When all tasks pass or max iterations reached:
-1. Archive prd.json and progress.txt to `.ralph/archive/{date}-{branch}/`
+1. Archive prd.json, progress.txt, and stories/ to `.ralph/archive/{date}-{branch}/`
 2. Summarize results (tasks completed / total)
 3. Exit loop
 
@@ -77,16 +92,18 @@ Tasks: 4 pending, 0 completed
 
 --- Iteration 1/10 ---
 Task: US-001 - User registration endpoint
+Story: .ralph/stories/PRD-US-001.md
 Spawning task-executor...
-[task-executor implements, tests, commits, updates PRD]
+[task-executor reads spec, implements, tests, commits, updates PRD]
 Result: COMPLETE
 
 Progress: 1/4 tasks complete
 
 --- Iteration 2/10 ---
 Task: US-002 - User login endpoint
+Story: .ralph/stories/PRD-US-002.md
 Spawning task-executor...
-[task-executor implements, tests, commits, updates PRD]
+[task-executor reads spec, implements, tests, commits, updates PRD]
 Result: COMPLETE
 
 Progress: 2/4 tasks complete
@@ -100,6 +117,7 @@ Progress: 2/4 tasks complete
 3. **Task-executor owns all work**: Implementation, commits, PRD updates, progress — all delegated
 4. **One commit per task**: Enforced by task-executor, not by you
 5. **User can intervene**: BLOCKED status pauses for input
+6. **Model override**: If `--model opus` is passed, mention it when spawning the executor
 
 ## Error Handling
 
@@ -112,5 +130,6 @@ Progress: 2/4 tasks complete
 
 Keep the user informed with minimal output:
 - Show current iteration number and task ID/title
+- Show the story file path being used
 - Display progress count after each task (e.g., "3/5 tasks complete")
 - Summarize at completion

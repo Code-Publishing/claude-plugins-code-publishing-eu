@@ -2,20 +2,15 @@
   "project": "{{PROJECT_NAME}}",
   "branchName": "{{BRANCH_NAME}}",
   "description": "{{PROJECT_DESCRIPTION}}",
+  "language": "{{LANGUAGE}}",
   "qualityChecks": [],
   "userStories": [
     {
       "id": "US-001",
       "title": "{{STORY_TITLE}}",
-      "description": "As a {{ROLE}}, I want {{GOAL}} so that {{BENEFIT}}",
-      "acceptanceCriteria": [
-        "{{CRITERION_1}}",
-        "{{CRITERION_2}}"
-      ],
       "priority": 1,
       "passes": false,
-      "commitHash": null,
-      "notes": ""
+      "commitHash": null
     }
   ]
 }

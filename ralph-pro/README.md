@@ -1,15 +1,18 @@
 # Ralph Pro
 
-Advanced autonomous coding loop for Claude Code with PRD-based task queue, progress tracking, and CLAUDE.md hierarchical discovery.
+Advanced autonomous coding loop for Claude Code with PRD-based task queue, architecture-driven execution, progress tracking, and CLAUDE.md hierarchical discovery.
 
 ## Features
 
 - **PRD-based task queue**: Define features as user stories with acceptance criteria
+- **Architecture-driven execution**: Each story gets a detailed spec with approach, constraints, and implementation steps
+- **Opus constitution guardrails**: Prevent the executor from simplifying or deviating from the architecture
+- **Split structure**: Lean status tracker (`prd.json`) + per-story specs (`PRD-US-XXX.md`)
 - **Progress tracking**: Append-only learning log across iterations
 - **CLAUDE.md discovery**: Hierarchical project guidance without context pollution
 - **Fresh context per task**: Each task executes in a clean subagent context
 - **One commit per task**: Clean git history with meaningful commits
-- **Project-specific config**: Inherits CLAUDE.md, MCP servers, and quality checks
+- **Configurable executor model**: Use `--model` to choose sonnet, opus, or haiku
 
 ## Installation
 
@@ -37,8 +40,9 @@ git clone https://github.com/sotomski/ralph-pro.git .claude/plugins/ralph-pro
 ```
 
 This creates:
-- `.ralph/prd.json` - Task queue with user stories
-- `.ralph/progress.txt` - Learning log
+- `.ralph/prd.json` — Lean status tracker (project overview + story statuses)
+- `.ralph/stories/PRD-US-XXX.md` — Per-story specs with architecture
+- `.ralph/progress.txt` — Learning log
 
 ### 2. Start the Loop
 
@@ -47,8 +51,9 @@ This creates:
 ```
 
 Options:
-- `--max-iterations 20` - Safety limit (default: 10)
-- `--quality-checks "npm test"` - Override quality checks
+- `--max-iterations 20` — Safety limit (default: 10)
+- `--prd-file path` — Custom PRD location (default: .ralph/prd.json)
+- `--model opus` — Override executor model (default: sonnet)
 
 ### 3. Check Progress
 
@@ -64,47 +69,81 @@ Options:
 
 ## Architecture
 
+### Split Structure
+
+```
+.ralph/
+├── prd.json                  # Lean: project overview + story status list
+├── stories/
+│   ├── PRD-US-001.md         # Full story spec + architecture
+│   ├── PRD-US-002.md
+│   └── ...
+├── progress.txt              # Append-only learning log
+└── archive/
+    └── {date}-{branch}/      # Archived sessions
+```
+
+### Two-Phase PRD Initialization
+
+**Phase 1 — Story Decomposition**: Parse user's feature, ask clarifying questions, generate user story list, detect project language.
+
+**Phase 2 — Architecture Derivation**: Explore the codebase, discover patterns and conventions, create detailed per-story spec files with architecture, context files, constraints, and implementation steps.
+
+### Execution Model
+
 ```
 Parent Session (orchestrator)
-├── Tracks: prd.json, progress.txt, iteration count
-├── Spawns: Subagent per task with context: fork
+├── Reads: prd.json (lean status)
+├── Selects: Next pending story
+├── Passes: Story file path (PRD-US-XXX.md) to executor
 └── Loop: Until all tasks pass or max iterations
 
 Subagent (task-executor)
-├── Fresh context: CLAUDE.md loaded automatically by Claude Code
-├── Works: Implements single user story
-├── Updates: Creates/updates CLAUDE.md with discovered patterns
-├── Returns: Completion status + learnings
-└── Exits: Parent captures result, commits changes
+├── Reads: Story spec with architecture
+├── Reads: Context files listed in spec
+├── Follows: Implementation steps exactly
+├── Commits: One commit per story
+└── Reports: COMPLETE | INCOMPLETE | BLOCKED
 ```
 
-## PRD Format
+## PRD Format (Lean)
+
+The main `prd.json` is a lean status tracker — all detailed descriptions and architecture live in the story files:
 
 ```json
 {
   "project": "user-authentication",
   "branchName": "feature/user-auth",
   "description": "Implement user authentication with JWT",
-  "qualityChecks": [
-    "npm test",
-    "npm run lint"
-  ],
+  "language": "typescript",
+  "qualityChecks": ["npm test", "npm run lint"],
   "userStories": [
-    {
-      "id": "US-001",
-      "title": "User registration endpoint",
-      "description": "As a user, I want to register so that I can create an account",
-      "acceptanceCriteria": [
-        "POST /auth/register accepts email and password",
-        "Returns 201 with user ID on success"
-      ],
-      "priority": 1,
-      "passes": false,
-      "commitHash": null,
-      "notes": ""
-    }
+    { "id": "US-001", "title": "User registration endpoint", "priority": 1, "passes": false, "commitHash": null },
+    { "id": "US-002", "title": "User login endpoint", "priority": 2, "passes": false, "commitHash": null }
   ]
 }
+```
+
+## Story Spec Format
+
+Each `PRD-US-XXX.md` contains the full specification:
+
+```markdown
+# US-001: User registration endpoint
+
+## Description
+As a new user, I want to register with email and password...
+
+## Acceptance Criteria
+- POST /auth/register accepts email and password
+- Returns 201 with user ID on success
+
+## Context Files (Read These First)
+- `src/services/UserService.ts` — existing service pattern
+- `src/routes/users.ts` — existing route pattern
+
+## Architecture
+### Approach / Rationale / Files / Constraints / Steps / Tests / Types
 ```
 
 ## CLAUDE.md Pattern
@@ -119,25 +158,7 @@ project-root/
         └── CLAUDE.md      # Auth-specific guidance
 ```
 
-Claude Code automatically loads relevant CLAUDE.md files when working in those directories. The task-executor agent is instructed to create/update CLAUDE.md files when discovering reusable patterns during implementation.
-
-Example `CLAUDE.md`:
-
-```markdown
-# CLAUDE.md - Auth Module
-
-## Patterns
-- Use bcrypt for password hashing
-- JWT tokens expire after 24 hours
-
-## Gotchas
-- Always validate email format before database insert
-- Remember to hash password before storing
-
-## Testing
-- Use TestContainer for database tests
-- Mock JWT signing in unit tests
-```
+Claude Code automatically loads relevant CLAUDE.md files when working in those directories. The task-executor agent creates/updates CLAUDE.md files when discovering reusable patterns during implementation.
 
 ## File Lifecycles
 
@@ -145,6 +166,7 @@ Example `CLAUDE.md`:
 |------|-----------|----------|
 | `CLAUDE.md` | Project lifetime | Never reset, accumulates patterns |
 | `prd.json` | Loop duration | Reset when new loop starts |
+| `stories/` | Loop duration | Archived when loop completes |
 | `progress.txt` | Loop duration | Archived when loop completes |
 
 Archives are stored in `.ralph/archive/{date}-{branch}/`.
@@ -154,16 +176,18 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | Feature | Ralph Wiggum | Ralph Pro |
 |---------|--------------|-----------|
 | Task queue | Single prompt | PRD with user stories |
+| Architecture | None | Per-story specs with constraints |
 | Progress log | None | Append-only progress.txt |
 | Context | Same session | Fresh per task (subagent) |
 | CLAUDE.md updates | None | Auto-updates with patterns |
 | Commits | User-controlled | Automatic per task |
+| Model config | Fixed | Configurable via --model |
 
 ## Commands
 
 | Command | Description |
 |---------|-------------|
-| `/prd-init <description>` | Create new PRD from description |
+| `/prd-init <description>` | Create new PRD with architecture specs |
 | `/ralph-pro [options]` | Start iteration loop |
 | `/progress-check` | Show current status |
 | `/cancel-ralph` | Cancel and archive |
@@ -172,7 +196,7 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 
 | Skill | Description |
 |-------|-------------|
-| `task-executor` | Executes single user story (context: fork) |
+| `task-executor` | Executes single user story following architecture spec (context: fork) |
 
 ## Scripts
 
@@ -182,7 +206,7 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | `update-task-status.sh` | Update task completion status |
 | `append-progress.sh` | Log entry to progress.txt |
 | `check-quality.sh` | Run quality check commands |
-| `archive-session.sh` | Archive completed session |
+| `archive-session.sh` | Archive completed session (incl. stories/) |
 
 ## Project Integration
 

@@ -1,13 +1,29 @@
 ---
 name: task-executor
-description: Execute a single user story from the PRD with fresh context. Used by the ralph-pro loop to implement individual tasks.
+description: Execute a single user story from the PRD with fresh context. Follows the architecture spec exactly.
 allowed-tools: Read, Write, Edit, Bash(*), Glob, Grep, WebFetch, WebSearch
 context: fork
 ---
 
 # Task Executor
 
-Execute ONE user story from the PRD with full focus and fresh context.
+Execute ONE user story by following its architecture spec exactly.
+
+---
+
+## RULES (Non-Negotiable)
+
+- Do NOT simplify, merge, or reduce components from the architecture spec
+- Do NOT skip test cases listed in the spec
+- Do NOT change method/function signatures from what the spec defines
+- Do NOT bypass constraints, even if you think there's a simpler way
+- Do NOT add dependencies or patterns not mentioned in the spec
+- If something seems complex, it is intentional — implement as specified
+- If the spec is insufficient to proceed, report BLOCKED rather than improvising
+- Follow Implementation Steps in exact order
+- Create tests BEFORE the production code they test
+
+---
 
 ## Context (Automatically Inherited)
 
@@ -17,51 +33,113 @@ Execute ONE user story from the PRD with full focus and fresh context.
 - User's personal CLAUDE.md
 - Current working directory
 
-## Input (Passed by Parent)
+## Input (Passed by Orchestrator)
 
-You will receive:
-1. **Task definition** - The user story to implement
-2. **Quality check commands** - Commands to verify your work
+1. **Branch name** — from `prd.json`
+2. **Quality check commands** — from `prd.json`
+3. **Story file path** — `PRD-US-XXX.md` with full spec
 
-## Your Mission
-
-Implement the user story completely:
-1. Read and understand the task definition
-2. Apply CLAUDE.md guidance (automatically available)
-3. Implement the feature/fix
-4. Ensure acceptance criteria are met
-5. Run quality checks if provided
-6. Report completion status
+---
 
 ## Workflow
 
-### 1. Understand the Task
+### 1. Read Inputs
+- Read `.ralph/prd.json` for branch name and quality checks
+- Read your assigned `PRD-US-XXX.md` story file (passed by orchestrator)
+- Read the **Codebase Patterns** section of `.ralph/progress.txt` (first ~30 lines only)
+
+### 2. Ensure Branch
+Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
+
+### 3. Read Context Files
+Read every file listed in the **Context Files** section of your story spec. These show the patterns and conventions you must follow.
+
+### 4. Implement
+Follow the **Implementation Steps** from the spec in exact order:
+- Create tests first (each test case from the spec)
+- Then implement production code
+- Wire up integrations as specified
+- Respect every **Constraint** listed
+
+### 5. Verify
+- Check each **Acceptance Criterion** is met
+- Run quality checks from `prd.qualityChecks`:
+  ```bash
+  # Run each quality check command
+  ```
+- For frontend stories: verify in browser, take screenshots if helpful
+
+### 6. Commit (only if quality checks pass)
+Stage all changes and commit:
 ```
-Task: [ID] [Title]
-Description: [User story]
-Acceptance Criteria:
-- [ ] Criterion 1
-- [ ] Criterion 2
+[STORY_ID] Brief title of the story
+
+Implements user story: "As a user, I want..."
+
+Acceptance criteria met:
+- [x] Criterion 1
+- [x] Criterion 2
+
+Generated with Ralph Pro
 ```
 
-### 2. Plan Implementation
-- Identify files to modify/create
-- Consider edge cases
-- Think about tests
+Get the commit hash after committing.
 
-### 3. Implement
-- Write code following project patterns
-- Add tests as appropriate
-- Follow acceptance criteria
+### 7. Update Tracking
+- Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
+- Append progress to `.ralph/progress.txt` (see format below)
+- If you discovered reusable patterns, add to Codebase Patterns section of progress.txt
+- Update CLAUDE.md files if you discovered patterns worth preserving (see below)
 
-### 4. Verify
-- Run quality checks
-- Manually verify acceptance criteria
-- Ensure no regressions
+### 8. Report Status
+End your response with exactly ONE of:
+- **COMPLETE** — All acceptance criteria met, quality checks pass, committed, PRD updated
+- **INCOMPLETE** — Partial progress, quality checks failed or criteria not fully met
+- **BLOCKED** — Cannot proceed without external input (explain why)
 
-### 5. Report Completion
+If checks fail: do NOT commit, report INCOMPLETE.
 
-When done, output your results in this format:
+---
+
+## Progress Report Format
+
+APPEND to `.ralph/progress.txt` (never replace, always append):
+```
+## [Date/Time] - [Story ID]
+- What was implemented
+- Files changed
+- **Learnings for future iterations:**
+  - Patterns discovered
+  - Gotchas encountered
+  - Useful context
+---
+```
+
+## Codebase Patterns
+
+If you discover a **reusable pattern** that future iterations should know, add it to the `## Codebase Patterns` section at the TOP of `.ralph/progress.txt` (create it if it doesn't exist):
+```
+## Codebase Patterns
+- Example: Use `sql<number>` template for aggregations
+- Example: Always use `IF NOT EXISTS` for migrations
+```
+Only add patterns that are **general and reusable**, not story-specific details.
+
+## CLAUDE.md Updates (Compound Engineering)
+
+Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
+- API patterns or conventions specific to that module
+- Gotchas or non-obvious requirements
+- Dependencies between files
+- Testing approaches for that area
+
+**Do NOT add:** story-specific implementation details, temporary debugging notes, information already in progress.txt.
+
+---
+
+## Task Completion Report
+
+Output your results in this format:
 
 ```
 ## Task Completion Report
@@ -75,38 +153,10 @@ When done, output your results in this format:
 
 ### Files Modified
 - path/to/file1.ts - [what changed]
-- path/to/file2.ts - [what changed]
 
 ### Quality Checks
 - [command]: PASSED | FAILED
-- [command]: PASSED | FAILED
 
 ### Learnings
-[Any patterns discovered, gotchas found, or notes for future iterations]
-
-### Next Steps (if INCOMPLETE/BLOCKED)
-[What needs to happen to complete this task]
+[Any patterns discovered, gotchas found]
 ```
-
-## Important Guidelines
-
-1. **Single-task focus**: Only work on the assigned task
-2. **Quality first**: Don't mark complete unless criteria are met
-3. **Document learnings**: Help future iterations benefit from discoveries
-4. **Clean commits**: Changes should be atomic and focused
-5. **No scope creep**: Don't fix unrelated issues unless critical
-
-## Completion Signals
-
-Use these status values:
-- **COMPLETE**: All acceptance criteria met, quality checks pass
-- **INCOMPLETE**: Partial progress, can continue
-- **BLOCKED**: Cannot proceed without external input
-
-## Error Handling
-
-If you encounter an error:
-1. Document what went wrong
-2. Try to fix if within scope
-3. If blocked, report status as BLOCKED
-4. Include specific error details for debugging

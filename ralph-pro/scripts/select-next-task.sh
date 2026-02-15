@@ -13,6 +13,7 @@ if [[ ! -f "$PRD_FILE" ]]; then
 fi
 
 # Find the first task with passes: false, ordered by priority
+# Returns lean task object: id, title, priority, passes, commitHash
 NEXT_TASK=$(jq -r '
     .userStories
     | sort_by(.priority)
