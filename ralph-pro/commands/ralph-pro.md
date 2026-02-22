@@ -28,7 +28,7 @@ Your per-iteration work should be minimal: read PRD, spawn subagent, check resul
 
 ## Arguments
 
-- `--max-iterations N` - Maximum iterations (default: 10)
+- `--max-iterations N` - Maximum iterations (default: 30)
 - `--prd-file path` - Custom PRD file location (default: .ralph/prd.json)
 - `--model [sonnet|opus|haiku]` - Override executor model (default: sonnet)
 
