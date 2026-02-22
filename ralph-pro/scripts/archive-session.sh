@@ -33,6 +33,26 @@ if [[ -d "$STORIES_DIR" ]]; then
     echo "Story specs archived from: $STORIES_DIR"
 fi
 
+# Copy review report if it exists
+REVIEW_REPORT="${RALPH_DIR}/review-report.md"
+if [[ -f "$REVIEW_REPORT" ]]; then
+    cp "$REVIEW_REPORT" "$ARCHIVE_DIR/"
+    echo "Review report archived"
+fi
+
+# Copy QA artifacts if they exist
+QA_DIR="${RALPH_DIR}/qa-scenarios"
+if [[ -d "$QA_DIR" ]]; then
+    cp -r "$QA_DIR" "$ARCHIVE_DIR/"
+    echo "QA scenarios archived from: $QA_DIR"
+fi
+
+TEST_REPORT="${RALPH_DIR}/test_report.md"
+if [[ -f "$TEST_REPORT" ]]; then
+    cp "$TEST_REPORT" "$ARCHIVE_DIR/"
+    echo "Test report archived"
+fi
+
 # Report
 echo "Session archived to: $ARCHIVE_DIR"
 

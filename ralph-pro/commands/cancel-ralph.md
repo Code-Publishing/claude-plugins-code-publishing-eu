@@ -30,6 +30,8 @@ mkdir -p "$ARCHIVE_DIR"
 cp .ralph/prd.json "$ARCHIVE_DIR/"
 cp .ralph/progress.txt "$ARCHIVE_DIR/" 2>/dev/null || true
 cp .ralph/review-report.md "$ARCHIVE_DIR/" 2>/dev/null || true
+cp -r .ralph/qa-scenarios "$ARCHIVE_DIR/" 2>/dev/null || true
+cp .ralph/test_report.md "$ARCHIVE_DIR/" 2>/dev/null || true
 
 echo "Archived to: $ARCHIVE_DIR"
 ```
@@ -45,6 +47,7 @@ echo "Archived to: $ARCHIVE_DIR"
 ### Final Status
 - Completed: X/Y tasks
 - Remaining: Z tasks
+- QA: [enabled/disabled] — [N scenarios, M passed / not run]
 
 ### Archive Location
 `.ralph/archive/{date}-{branch}/`

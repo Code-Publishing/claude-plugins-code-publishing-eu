@@ -1,0 +1,26 @@
+# {{SCENARIO_ID}}: {{SCENARIO_TITLE}}
+
+## Objective
+{{OBJECTIVE}}
+
+## Prerequisites
+{{PREREQUISITES}}
+
+## Test Steps
+
+### Step 1: {{STEP_TITLE}}
+**Action**: {{ACTION}}
+**Expected**: {{EXPECTED}}
+**Verify**: {{VERIFY}}
+
+## Pass Criteria
+- [ ] {{PASS_CRITERION}}
+
+## Fail Criteria
+- [ ] {{FAIL_CRITERION}}
+
+## Backend Verification
+{{BACKEND_CHECKS}}
+
+## Playwright Hints
+{{PLAYWRIGHT_HINTS}}

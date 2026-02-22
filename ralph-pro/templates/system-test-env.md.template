@@ -1,0 +1,48 @@
+# System Test Environment
+
+This file describes how to access and interact with the test environment for QA testing.
+
+## Environment Setup
+
+### How to Start
+{{SETUP_COMMANDS}}
+
+### Health Check
+{{HEALTH_CHECK_COMMAND}}
+
+### Base URL
+{{BASE_URL}}
+
+## Client Testing
+
+### Tool
+{{TEST_TOOL}} (default: Playwright CLI)
+
+### Browser Configuration
+{{BROWSER_CONFIG}}
+
+## Database Access
+
+### Connection
+{{DB_CONNECTION}}
+
+### Query Tool
+{{QUERY_TOOL}}
+
+## Other Services
+
+### {{SERVICE_NAME}}
+{{SERVICE_ACCESS}}
+
+## Authentication
+
+### Test User
+{{TEST_USER_CREDENTIALS}}
+
+### API Keys
+{{API_KEYS}}
+
+## Cleanup
+
+### How to Reset Test State
+{{CLEANUP_COMMANDS}}

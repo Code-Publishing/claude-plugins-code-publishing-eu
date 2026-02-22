@@ -13,6 +13,8 @@ Advanced autonomous coding loop for Claude Code with PRD-based task queue, archi
 - **Fresh context per task**: Each task executes in a clean subagent context
 - **One commit per task**: Clean git history with meaningful commits
 - **Configurable executor model**: Use `--model` to choose sonnet, opus, or haiku
+- **Optional QA phase**: System-level testing with Playwright CLI and backend verification after code review
+- **QA isolation**: Task executors never see QA scenarios, preventing implementation gaming
 
 ## Installation
 
@@ -43,6 +45,8 @@ This creates:
 - `.ralph/prd.json` — Lean status tracker (project overview + story statuses)
 - `.ralph/stories/PRD-US-XXX.md` — Per-story specs with architecture
 - `.ralph/progress.txt` — Learning log
+- `.ralph/qa-scenarios/QA-XXX.md` — QA test scenarios (if QA enabled)
+- `SYSTEM_TEST_ENV.md` — Test environment config (if QA enabled, project root)
 
 ### 2. Start the Loop
 
@@ -51,9 +55,10 @@ This creates:
 ```
 
 Options:
-- `--max-iterations 20` — Safety limit (default: 10)
+- `--max-iterations 20` — Safety limit (default: 30)
 - `--prd-file path` — Custom PRD location (default: .ralph/prd.json)
 - `--model opus` — Override executor model (default: sonnet)
+- `--skip-qa` — Skip QA phase even if enabled in prd.json
 
 ### 3. Check Progress
 
@@ -78,16 +83,23 @@ Options:
 │   ├── PRD-US-001.md         # Full story spec + architecture
 │   ├── PRD-US-002.md
 │   └── ...
+├── qa-scenarios/             # QA test scenarios (if enabled)
+│   ├── QA-001.md             # Scenario definition
+│   ├── QA-001.spec.ts        # Playwright script (auto-generated)
+│   └── ...
+├── test_report.md            # QA test results (reset each cycle)
 ├── progress.txt              # Append-only learning log
 └── archive/
     └── {date}-{branch}/      # Archived sessions
 ```
 
-### Two-Phase PRD Initialization
+### Three-Phase PRD Initialization
 
 **Phase 1 — Story Decomposition**: Parse user's feature, ask clarifying questions, generate user story list, detect project language.
 
 **Phase 2 — Architecture Derivation**: Explore the codebase, discover patterns and conventions, create detailed per-story spec files with architecture, context files, constraints, and implementation steps.
+
+**Phase 3 — QA Configuration** (optional): Ask if QA is desired, check/create `SYSTEM_TEST_ENV.md`, spawn QA planner to create end-to-end test scenarios.
 
 ### Execution Model
 
@@ -165,9 +177,12 @@ Claude Code automatically loads relevant CLAUDE.md files when working in those d
 | File | Lifecycle | Behavior |
 |------|-----------|----------|
 | `CLAUDE.md` | Project lifetime | Never reset, accumulates patterns |
+| `SYSTEM_TEST_ENV.md` | Project lifetime | Persists across sessions, project root |
 | `prd.json` | Loop duration | Reset when new loop starts |
 | `stories/` | Loop duration | Archived when loop completes |
 | `progress.txt` | Loop duration | Archived when loop completes |
+| `qa-scenarios/` | Loop duration | Archived when loop completes |
+| `test_report.md` | Per QA cycle | Reset each QA cycle, archived at completion |
 
 Archives are stored in `.ralph/archive/{date}-{branch}/`.
 
@@ -182,6 +197,7 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | CLAUDE.md updates | None | Auto-updates with patterns |
 | Commits | User-controlled | Automatic per task |
 | Model config | Fixed | Configurable via --model |
+| QA testing | None | Optional Playwright CLI + backend verification |
 
 ## Commands
 
@@ -197,6 +213,12 @@ Archives are stored in `.ralph/archive/{date}-{branch}/`.
 | Skill | Description |
 |-------|-------------|
 | `task-executor` | Executes single user story following architecture spec (context: fork) |
+| `code-reviewer` | Reviews code changes for bugs, silent failures, and style violations (context: fork) |
+| `spec-reviewer` | Checks implementation against story specs for deviations (context: fork) |
+| `fix-architect` | Creates fix stories from code review findings (context: fork) |
+| `qa-planner` | Creates QA test scenarios from PRD stories and test environment config (context: fork) |
+| `qa-agent` | Executes a single QA scenario against the live test environment (context: fork) |
+| `qa-fix-architect` | Creates fix stories from QA test failures (context: fork) |
 
 ## Scripts
 

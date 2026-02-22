@@ -11,6 +11,8 @@ Display the current status of the Ralph Pro iteration loop.
 Read and summarize the current state of:
 1. `.ralph/prd.json` - Task queue status
 2. `.ralph/progress.txt` - Recent activity log
+3. `.ralph/qa-scenarios/QA-*.md` - QA scenario files (if QA enabled)
+4. `.ralph/test_report.md` - QA test results (if QA ran)
 
 ## Output Format
 
@@ -36,6 +38,18 @@ Provide a clear summary:
 | ID | Title | Priority |
 |----|-------|----------|
 | US-003 | Task title | 3 |
+
+### QA Status
+- QA enabled: Yes/No
+- QA scenarios: N total
+- QA cycles completed: N
+- Last QA result: [All passed / N failed / Not run yet]
+- QA fix stories: X/Y completed
+
+### QA Scenarios (if QA enabled)
+| ID | Title | Last Result |
+|----|-------|-------------|
+| QA-001 | ... | PASSED/FAILED/NOT RUN |
 
 ### Recent Activity (last 5 entries)
 [Show last 5 lines from progress.txt]
