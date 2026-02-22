@@ -46,7 +46,7 @@ Execute ONE user story by following its architecture spec exactly.
 ### 1. Read Inputs
 - Read `.ralph/prd.json` for branch name and quality checks
 - Read your assigned `PRD-US-XXX.md` story file (passed by orchestrator)
-- Read the **Codebase Patterns** section of `.ralph/progress.txt` (first ~30 lines only)
+- Read `.ralph/progress.txt` **in full** — this is the shared loop memory across all iterations. It contains patterns, gotchas, and learnings from previous agents that may be critical for your task
 
 ### 2. Ensure Branch
 Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
@@ -69,8 +69,49 @@ Follow the **Implementation Steps** from the spec in exact order:
   ```
 - For frontend stories: verify in browser, take screenshots if helpful
 
-### 6. Commit (only if quality checks pass)
-Stage all changes and commit:
+### 6. Update Loop Memory (progress.txt)
+
+**This step is mandatory — do NOT skip it.** `.ralph/progress.txt` is the shared memory between all task-executor agents in this loop. Each agent reads it at the start and updates it after completing work. Use the **Edit tool** to make all changes.
+
+#### 6a. Add your progress entry
+
+Use the Edit tool to insert your entry **at the end** of the file:
+
+```
+## [Date/Time] - [Story ID]
+- What was implemented
+- Files changed
+- **Learnings for future iterations:**
+  - Patterns discovered
+  - Gotchas encountered
+  - Useful context
+---
+```
+
+#### 6b. Update the Codebase Patterns section
+
+If you discovered reusable patterns, use the Edit tool to add them to the `## Codebase Patterns` section near the top of the file. Create this section after the header comments if it doesn't exist yet:
+
+```
+## Codebase Patterns
+- Example: Use `sql<number>` template for aggregations
+- Example: Always use `IF NOT EXISTS` for migrations
+```
+
+Only add patterns that are **general and reusable**, not story-specific details. Story-specific learnings belong in your progress entry (6a).
+
+#### 6c. Update CLAUDE.md files
+
+Check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
+- API patterns or conventions specific to that module
+- Gotchas or non-obvious requirements
+- Dependencies between files
+- Testing approaches for that area
+
+**Do NOT add:** story-specific implementation details, temporary debugging notes, information already in progress.txt.
+
+### 7. Commit (only if quality checks pass)
+Stage all changes (including progress.txt) and commit:
 ```
 [STORY_ID] Brief title of the story
 
@@ -85,55 +126,16 @@ Generated with Ralph Pro
 
 Get the commit hash after committing.
 
-### 7. Update Tracking
+### 8. Update PRD
 - Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
-- Append progress to `.ralph/progress.txt` (see format below)
-- If you discovered reusable patterns, add to Codebase Patterns section of progress.txt
-- Update CLAUDE.md files if you discovered patterns worth preserving (see below)
 
-### 8. Report Status
+### 9. Report Status
 End your response with exactly ONE of:
 - **COMPLETE** — All acceptance criteria met, quality checks pass, committed, PRD updated
 - **INCOMPLETE** — Partial progress, quality checks failed or criteria not fully met
 - **BLOCKED** — Cannot proceed without external input (explain why)
 
 If checks fail: do NOT commit, report INCOMPLETE.
-
----
-
-## Progress Report Format
-
-APPEND to `.ralph/progress.txt` (never replace, always append):
-```
-## [Date/Time] - [Story ID]
-- What was implemented
-- Files changed
-- **Learnings for future iterations:**
-  - Patterns discovered
-  - Gotchas encountered
-  - Useful context
----
-```
-
-## Codebase Patterns
-
-If you discover a **reusable pattern** that future iterations should know, add it to the `## Codebase Patterns` section at the TOP of `.ralph/progress.txt` (create it if it doesn't exist):
-```
-## Codebase Patterns
-- Example: Use `sql<number>` template for aggregations
-- Example: Always use `IF NOT EXISTS` for migrations
-```
-Only add patterns that are **general and reusable**, not story-specific details.
-
-## CLAUDE.md Updates (Compound Engineering)
-
-Before committing, check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
-- API patterns or conventions specific to that module
-- Gotchas or non-obvious requirements
-- Dependencies between files
-- Testing approaches for that area
-
-**Do NOT add:** story-specific implementation details, temporary debugging notes, information already in progress.txt.
 
 ---
 
