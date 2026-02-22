@@ -29,6 +29,7 @@ ARCHIVE_DIR=".ralph/archive/${DATE}-${BRANCH}"
 mkdir -p "$ARCHIVE_DIR"
 cp .ralph/prd.json "$ARCHIVE_DIR/"
 cp .ralph/progress.txt "$ARCHIVE_DIR/" 2>/dev/null || true
+cp .ralph/review-report.md "$ARCHIVE_DIR/" 2>/dev/null || true
 
 echo "Archived to: $ARCHIVE_DIR"
 ```
