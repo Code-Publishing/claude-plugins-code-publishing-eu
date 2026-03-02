@@ -111,8 +111,15 @@ Check if any edited files have learnings worth preserving in nearby CLAUDE.md fi
 **Do NOT add:** story-specific implementation details, temporary debugging notes, information already in progress.txt.
 
 ### 7. Commit (only if quality checks pass)
-Stage all changes (including progress.txt) and commit:
-```
+
+**This step is mandatory — do NOT skip it.** You MUST run these git commands using the Bash tool:
+
+```bash
+# Stage all changes including progress.txt and any CLAUDE.md updates
+git add -A
+
+# Commit with the story-specific message (replace placeholders)
+git commit -m "$(cat <<'EOF'
 [STORY_ID] Brief title of the story
 
 Implements user story: "As a user, I want..."
@@ -122,9 +129,18 @@ Acceptance criteria met:
 - [x] Criterion 2
 
 Generated with Ralph Pro
+EOF
+)"
 ```
 
-Get the commit hash after committing.
+Replace `[STORY_ID]` with the actual story ID (e.g., `US-001`), fill in the real story title, user story text, and list the actual acceptance criteria from the spec.
+
+After committing, get the commit hash:
+```bash
+git rev-parse HEAD
+```
+
+Save this hash — you need it for Step 8.
 
 ### 8. Update PRD
 - Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
