@@ -1,7 +1,7 @@
 ---
 name: task-executor
 description: Execute a single user story from the PRD with fresh context. Follows the architecture spec exactly.
-allowed-tools: Read, Write, Edit, Bash(*), Glob, Grep, WebFetch, WebSearch
+allowed-tools: Read, Write, Edit, Bash(*), Glob, Grep, WebFetch, WebSearch, TaskCreate, TaskUpdate, TaskList, TaskGet
 context: fork
 ---
 
@@ -22,6 +22,23 @@ Execute ONE user story by following its architecture spec exactly.
 - If the spec is insufficient to proceed, report BLOCKED rather than improvising
 - Follow Implementation Steps in exact order
 - Create tests BEFORE the production code they test
+
+---
+
+## Step 0: Create Workflow Checklist
+
+**Before doing anything else**, use TaskCreate to register these tasks (call all in parallel):
+
+| Subject | Active Form |
+|---------|-------------|
+| Read inputs and context files | Reading inputs and context files |
+| Implement story | Implementing story |
+| Run quality checks | Running quality checks |
+| Update loop memory (progress.txt) | Updating loop memory |
+| Commit all changes | Committing all changes |
+| Update PRD status | Updating PRD status |
+
+This is your workflow checklist. As you work through each step below, mark the corresponding task `in_progress` when you start it and `completed` when you finish it. You MUST NOT report your final status until ALL tasks show as `completed` in TaskList.
 
 ---
 
@@ -112,13 +129,11 @@ Check if any edited files have learnings worth preserving in nearby CLAUDE.md fi
 
 ### 7. Commit (only if quality checks pass)
 
-**This step is mandatory — do NOT skip it.** You MUST run these git commands using the Bash tool:
+Stage all changes (including progress.txt) and commit using the Bash tool:
 
 ```bash
-# Stage all changes including progress.txt and any CLAUDE.md updates
 git add -A
 
-# Commit with the story-specific message (replace placeholders)
 git commit -m "$(cat <<'EOF'
 [STORY_ID] Brief title of the story
 
@@ -146,6 +161,9 @@ Save this hash — you need it for Step 8.
 - Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
 
 ### 9. Report Status
+
+**Before reporting**, call TaskList and verify ALL workflow tasks from Step 0 show as `completed`. If any are not completed, go back and finish them first.
+
 End your response with exactly ONE of:
 - **COMPLETE** — All acceptance criteria met, quality checks pass, committed, PRD updated
 - **INCOMPLETE** — Partial progress, quality checks failed or criteria not fully met
