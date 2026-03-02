@@ -7,7 +7,7 @@ context: fork
 
 # Task Executor
 
-Execute ONE user story by following its architecture spec exactly.
+Pick up the next available story and do as much as you can to complete it.
 
 ---
 
@@ -22,23 +22,8 @@ Execute ONE user story by following its architecture spec exactly.
 - If the spec is insufficient to proceed, report BLOCKED rather than improvising
 - Follow Implementation Steps in exact order
 - Create tests BEFORE the production code they test
-
----
-
-## Step 0: Create Workflow Checklist
-
-**Before doing anything else**, use TaskCreate to register these tasks (call all in parallel):
-
-| Subject | Active Form |
-|---------|-------------|
-| Read inputs and context files | Reading inputs and context files |
-| Implement story | Implementing story |
-| Run quality checks | Running quality checks |
-| Update loop memory (progress.txt) | Updating loop memory |
-| Commit all changes | Committing all changes |
-| Update PRD status | Updating PRD status |
-
-This is your workflow checklist. As you work through each step below, mark the corresponding task `in_progress` when you start it and `completed` when you finish it. You MUST NOT report your final status until ALL tasks show as `completed` in TaskList.
+- If a previous executor already implemented parts of this story, do NOT re-implement what's already correct — assess first, then fill gaps
+- Update `.ralph/progress.txt` inline as you work — after each significant milestone, pattern discovered, or gotcha encountered. Do NOT save all progress updates for the end.
 
 ---
 
@@ -52,51 +37,32 @@ This is your workflow checklist. As you work through each step below, mark the c
 
 ## Input (Passed by Orchestrator)
 
-1. **Branch name** — from `prd.json`
-2. **Quality check commands** — from `prd.json`
-3. **Story file path** — `PRD-US-XXX.md` with full spec
+1. **Quality check commands** — from `prd.json`
 
 ---
 
 ## Workflow
 
-### 1. Read Inputs
-- Read `.ralph/prd.json` for branch name and quality checks
-- Read your assigned `PRD-US-XXX.md` story file (passed by orchestrator)
-- Read `.ralph/progress.txt` **in full** — this is the shared loop memory across all iterations. It contains patterns, gotchas, and learnings from previous agents that may be critical for your task
+### 1. Read State & Pick Story
 
-### 2. Ensure Branch
-Check you're on the correct branch from PRD `branchName`. If not, check it out or create from main.
+- Read `.ralph/prd.json` — find the first story (by priority) with `passes: false`
+- Read that story's spec file: `.ralph/stories/PRD-{STORY_ID}.md`
+- Read `.ralph/progress.txt` in full — this is shared loop memory across all iterations. It contains patterns, gotchas, and learnings from previous executors that may be critical for your task.
+- Read every file listed in the story spec's **Context Files** section
 
-### 3. Read Context Files
-Read every file listed in the **Context Files** section of your story spec. These show the patterns and conventions you must follow.
+### 2. Assess & Implement
 
-### 4. Implement
-Follow the **Implementation Steps** from the spec in exact order:
-- Create tests first (each test case from the spec)
-- Then implement production code
-- Wire up integrations as specified
-- Respect every **Constraint** listed
+Read the story spec's acceptance criteria and implementation steps. Check the current state of the codebase — do the expected files exist? Do they contain the expected code?
 
-### 5. Verify
-- Check each **Acceptance Criterion** is met
-- Run quality checks from `prd.qualityChecks`:
-  ```bash
-  # Run each quality check command
-  ```
-- For frontend stories: verify in browser, take screenshots if helpful
+- If **nothing is implemented** → follow Implementation Steps in exact order (tests first, then production code)
+- If **partially implemented** → identify what's missing based on the spec and continue from where the previous executor left off
+- If **fully implemented** → skip straight to quality checks
 
-### 6. Update Loop Memory (progress.txt)
-
-**This step is mandatory — do NOT skip it.** `.ralph/progress.txt` is the shared memory between all task-executor agents in this loop. Each agent reads it at the start and updates it after completing work. Use the **Edit tool** to make all changes.
-
-#### 6a. Add your progress entry
-
-Use the Edit tool to insert your entry **at the end** of the file:
+**Progress updates**: Update `.ralph/progress.txt` whenever you have something useful to record. Use the Edit tool to append entries after discovering patterns, encountering gotchas, or completing significant milestones. Format:
 
 ```
 ## [Date/Time] - [Story ID]
-- What was implemented
+- What was implemented / accomplished
 - Files changed
 - **Learnings for future iterations:**
   - Patterns discovered
@@ -105,9 +71,7 @@ Use the Edit tool to insert your entry **at the end** of the file:
 ---
 ```
 
-#### 6b. Update the Codebase Patterns section
-
-If you discovered reusable patterns, use the Edit tool to add them to the `## Codebase Patterns` section near the top of the file. Create this section after the header comments if it doesn't exist yet:
+If you discovered reusable patterns, also add them to the `## Codebase Patterns` section near the top of progress.txt (create this section if it doesn't exist):
 
 ```
 ## Codebase Patterns
@@ -115,21 +79,22 @@ If you discovered reusable patterns, use the Edit tool to add them to the `## Co
 - Example: Always use `IF NOT EXISTS` for migrations
 ```
 
-Only add patterns that are **general and reusable**, not story-specific details. Story-specific learnings belong in your progress entry (6a).
+Also check if any edited files have learnings worth preserving in nearby CLAUDE.md files (API patterns, gotchas, dependencies, testing approaches). Do NOT add story-specific implementation details or temporary notes.
 
-#### 6c. Update CLAUDE.md files
+### 3. Quality Checks
 
-Check if any edited files have learnings worth preserving in nearby CLAUDE.md files:
-- API patterns or conventions specific to that module
-- Gotchas or non-obvious requirements
-- Dependencies between files
-- Testing approaches for that area
+Run every command from `prd.qualityChecks`:
+```bash
+# Run each quality check command
+```
 
-**Do NOT add:** story-specific implementation details, temporary debugging notes, information already in progress.txt.
+- If checks fail → fix issues and re-run
+- If checks pass → proceed to commit
+- For frontend stories: verify in browser, take screenshots if helpful
 
-### 7. Commit (only if quality checks pass)
+### 4. Commit
 
-Stage all changes (including progress.txt) and commit using the Bash tool:
+Stage all changes and commit using the Bash tool:
 
 ```bash
 git add -A
@@ -155,21 +120,20 @@ After committing, get the commit hash:
 git rev-parse HEAD
 ```
 
-Save this hash — you need it for Step 8.
+### 5. Update PRD
 
-### 8. Update PRD
-- Update `.ralph/prd.json`: set `passes: true` and `commitHash` for this story
+Edit `.ralph/prd.json`: set `passes: true` and `commitHash` for this story.
 
-### 9. Report Status
-
-**Before reporting**, call TaskList and verify ALL workflow tasks from Step 0 show as `completed`. If any are not completed, go back and finish them first.
+### 6. Report Status
 
 End your response with exactly ONE of:
-- **COMPLETE** — All acceptance criteria met, quality checks pass, committed, PRD updated
-- **INCOMPLETE** — Partial progress, quality checks failed or criteria not fully met
+- **COMPLETE** — Story committed and PRD updated
+- **INCOMPLETE** — Made progress but story not yet complete (explain what was done and what remains)
 - **BLOCKED** — Cannot proceed without external input (explain why)
 
-If checks fail: do NOT commit, report INCOMPLETE.
+If quality checks fail and you cannot fix them: do NOT commit, report INCOMPLETE with details of what failed.
+
+If you are running low on budget and cannot finish everything: update `progress.txt` with what you accomplished and what remains, then report INCOMPLETE.
 
 ---
 

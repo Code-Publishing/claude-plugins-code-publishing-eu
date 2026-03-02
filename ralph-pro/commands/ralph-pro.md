@@ -13,13 +13,13 @@ Your context window is precious. To avoid compaction across iterations, follow t
 - **NEVER** read implementation/source files yourself
 - **NEVER** run code, tests, or quality checks yourself
 - **NEVER** modify source files yourself
-- **NEVER** do git add, git commit, or update PRD/progress files yourself
-- **ONLY** read `.ralph/prd.json` to check task status and select next task
+- **NEVER** do git add, git commit yourself
+- **ONLY** read `.ralph/prd.json` to check task status
 - **ALL** implementation, verification, committing, PRD updates, progress logging, and CLAUDE.md updates are done by subagents
 - **Exception 1**: you write `.ralph/review-report.md` by combining outputs from the two review agents
 - **Exception 2**: you write/reset `.ralph/test_report.md` at the start of each QA cycle
 
-Your per-iteration work should be minimal: read PRD, spawn subagent, check result, loop.
+Your per-iteration work should be minimal: read PRD, spawn subagent, re-read PRD, loop.
 
 ## Prerequisites
 
@@ -40,43 +40,33 @@ Your per-iteration work should be minimal: read PRD, spawn subagent, check resul
 
 1. **Read PRD** - Load `.ralph/prd.json` to get task list, branch name, and quality checks
 
-2. **Select next task** - Find highest priority task with `passes: false`
-   - If no pending tasks remain, go to Completion
-
-3. **Ensure branch** - Check/create feature branch from `prd.branchName`
+2. **Ensure branch** - Check/create feature branch from `prd.branchName`
    ```bash
    BRANCH=$(jq -r '.branchName' .ralph/prd.json)
    git checkout -B "$BRANCH" 2>/dev/null || git checkout "$BRANCH"
    ```
 
-4. **Spawn task-executor** - Use the task-executor skill with `context: fork`
+3. **Spawn task-executor** - Use the task-executor skill with `context: fork` and `max_turns: 60`
 
-   Pass to the executor:
-   - **Branch name** from `prd.branchName`
+   Pass to the executor only the quality checks (the executor self-selects its story from prd.json):
    - **Quality checks** from `prd.qualityChecks`
-   - **Story file path**: `.ralph/stories/PRD-{STORY_ID}.md` (e.g., `.ralph/stories/PRD-US-001.md`)
    - **Model override** if `--model` was specified (pass as part of the task prompt)
 
    Example prompt to executor:
    ```
-   Branch: feature/user-auth
    Quality checks: npm test, npm run lint
-   Story file: .ralph/stories/PRD-US-001.md
 
-   Execute this user story following the instructions in your SKILL.md.
+   Work on the next available story following the instructions in your SKILL.md.
    ```
 
-   The task-executor handles EVERYTHING: reading story spec, reading context files, implementation, quality checks, git commit, PRD update, progress log, CLAUDE.md updates.
+4. **Check result** - First, check if the executor reported **BLOCKED** — if so, stop and ask the user for input. Otherwise, re-read `.ralph/prd.json` to check if any story changed from `passes: false` to `passes: true`:
+   - **Story completed**: Log which story completed and progress count
+   - **No story completed**: Log that the executor made progress (or not) — the next iteration will re-target the same story
 
-5. **Check result** - Read the task-executor's final status line:
-   - **COMPLETE**: Log iteration success, continue to next task
-   - **INCOMPLETE**: Log progress, continue to next iteration
-   - **BLOCKED**: Log reason, ask user for input
-
-6. **Re-read PRD** - Reload `.ralph/prd.json` to see updated task statuses
-
-7. **Continue or exit** - If more pending tasks and under max iterations, repeat from step 1
-   - If no pending US-* tasks remain (all pass), proceed to **Review Phase**
+5. **Continue or exit**
+   - If all target stories have `passes: true` → proceed to **Review Phase**
+   - If max iterations reached → proceed to **Completion**
+   - Otherwise → repeat from step 1 (the next executor will pick up the same or next story)
 
 ---
 
@@ -146,10 +136,9 @@ The fix-architect creates `PRD-US-XXX-FIX-N.md` story files and updates `prd.jso
 
 Re-read `.ralph/prd.json` — it now contains fix stories with `passes: false`.
 
-Run the standard implementation loop again (steps 1–7 above), but:
-- Only process stories with IDs containing `-FIX-` (at this point, only review fix stories exist — QA fix stories are created later)
-- Use the same task-executor with the same rules
-- **No re-review after fixes** — one review pass only
+Run the standard implementation loop again (steps 1–5 above). The executor will naturally pick up the `-FIX-` stories since they are the ones with `passes: false`.
+
+**No re-review after fixes** — one review pass only.
 
 #### 6. Proceed to QA Phase (or Completion if QA disabled)
 
@@ -248,11 +237,9 @@ If the qa-fix-architect reports 0 fix stories created, skip the fix loop and pro
 
 Re-read `.ralph/prd.json` — it now contains QA fix stories with `passes: false`.
 
-Run the standard implementation loop (steps 1–7 from the main loop), but:
-- Only process stories with IDs containing `-QA-FIX-`
-- Use the same task-executor with the same rules
-- Each iteration counts toward the global `--max-iterations` budget
-- **No re-review after QA fixes** — go straight back to QA testing
+Run the standard implementation loop (steps 1–5 from the main loop). The executor will naturally pick up the `-QA-FIX-` stories since they are the ones with `passes: false`.
+
+Each iteration counts toward the global `--max-iterations` budget.
 
 #### 6. Re-test (Loop Back)
 
@@ -272,7 +259,7 @@ QA Phase Entry
 │   ├─ All passed? ──► YES ──► Completion (QA success)
 │   ├─ Env unavailable? ──► YES ──► Completion (QA aborted)
 │   ├─ Failures? ──► Spawn qa-fix-architect
-│   ├─ Implement QA fix stories (task-executor loop)
+│   ├─ Implement QA fix stories (executor loop)
 │   └─ Cycles remaining? ──► YES ──► Loop back to [Cycle N+1]
 │                          ──► NO  ──► Completion (QA budget exhausted)
 │
@@ -304,19 +291,19 @@ PRD: user-authentication
 Branch: feature/user-auth
 Tasks: 4 pending, 0 completed
 
---- Iteration 1/10 ---
-Task: US-001 - User registration endpoint
-Story: .ralph/stories/PRD-US-001.md
-Spawning task-executor...
-Result: COMPLETE
+--- Iteration 1/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: US-001 completed ✓
 
 Progress: 1/4 tasks complete
 
---- Iteration 2/10 ---
-Task: US-002 - User login endpoint
-Story: .ralph/stories/PRD-US-002.md
-Spawning task-executor...
-Result: COMPLETE
+--- Iteration 2/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: No story completed (executor made progress on US-002)
+
+--- Iteration 3/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: US-002 completed ✓
 
 Progress: 2/4 tasks complete
 ...
@@ -332,17 +319,13 @@ Review report written to .ralph/review-report.md
 Spawning fix-architect...
 Fix architect: 2 fix stories created
 
---- Fix Iteration 1 ---
-Task: US-001-FIX-1 - Fix swallowed exception in registration
-Story: .ralph/stories/PRD-US-001-FIX-1.md
-Spawning task-executor...
-Result: COMPLETE
+--- Iteration 8/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: US-001-FIX-1 completed ✓
 
---- Fix Iteration 2 ---
-Task: US-002-FIX-1 - Fix missing null check in login
-Story: .ralph/stories/PRD-US-002-FIX-1.md
-Spawning task-executor...
-Result: COMPLETE
+--- Iteration 9/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: US-002-FIX-1 completed ✓
 
 --- QA Phase ---
 QA enabled. Running system-level test scenarios...
@@ -363,11 +346,9 @@ QA Cycle 1: 1/2 passed, 1/2 failed
 Spawning qa-fix-architect...
 QA fix architect: 1 fix story created
 
---- QA Fix Iteration 1 ---
-Task: US-002-QA-FIX-1 - Fix login redirect after auth
-Story: .ralph/stories/PRD-US-002-QA-FIX-1.md
-Spawning task-executor...
-Result: COMPLETE
+--- Iteration 12/30 ---
+Spawning task-executor (max_turns: 60)...
+Result: US-002-QA-FIX-1 completed ✓
 
 --- QA Cycle 2 ---
 Scenario: QA-001 - User registration flow
@@ -392,19 +373,20 @@ Archived to .ralph/archive/2025-01-15-feature-user-auth/
 1. **You are a thin loop**: Your only job is spawn subagents and track iteration count
 2. **Fresh context per task**: Each subagent has clean context via `context: fork`
 3. **Subagents own all work**: Implementation, review, fix architecture, QA testing, commits — all delegated
-4. **One commit per task**: Enforced by task-executor, not by you
-5. **User can intervene**: BLOCKED status pauses for input
-6. **Model override**: If `--model opus` is passed, mention it when spawning the executor
-7. **One review pass**: Review happens once after implementation — fixes are NOT re-reviewed
-8. **Orchestrator writes two files**: You write `.ralph/review-report.md` and reset `.ralph/test_report.md` — these are the only exceptions to the "never write files" rule
-9. **QA is optional**: Only runs if `qaEnabled: true` in prd.json and `--skip-qa` not passed
-10. **QA scenarios are sequential**: One qa-agent at a time to avoid environment conflicts
-11. **QA budget is shared**: QA fix iterations count toward global --max-iterations
-12. **Task-executor isolation**: The task-executor never receives QA scenario files — only standard story specs from .ralph/stories/
+4. **Self-healing loop**: The orchestrator keeps spawning executors until `prd.json` shows the story as done. An executor may need multiple passes to complete a story.
+5. **max_turns: 60** for all executor spawns
+6. **User can intervene**: BLOCKED status pauses for input
+7. **Model override**: If `--model opus` is passed, mention it when spawning the executor
+8. **One review pass**: Review happens once after implementation — fixes are NOT re-reviewed
+9. **Orchestrator writes two files**: You write `.ralph/review-report.md` and reset `.ralph/test_report.md` — these are the only exceptions to the "never write files" rule
+10. **QA is optional**: Only runs if `qaEnabled: true` in prd.json and `--skip-qa` not passed
+11. **QA scenarios are sequential**: One qa-agent at a time to avoid environment conflicts
+12. **QA budget is shared**: QA fix iterations count toward global --max-iterations
+13. **Task-executor isolation**: The task-executor never receives QA scenario files — only standard story specs from .ralph/stories/
 
 ## Error Handling
 
-- **Task-executor reports INCOMPLETE**: Log it, continue to next iteration
+- **No story completed this iteration**: Continue loop — the next executor will pick up the same story
 - **Task-executor reports BLOCKED**: Stop and ask user
 - **Reviewer reports 0 issues**: Skip fix phase, go to QA Phase (or Completion)
 - **Fix-architect reports 0 stories**: Skip fix loop, go to QA Phase (or Completion)
@@ -420,9 +402,9 @@ Archived to .ralph/archive/2025-01-15-feature-user-auth/
 ## Interaction with User
 
 Keep the user informed with minimal output:
-- Show current iteration number and task ID/title
-- Show the story file path being used
-- Display progress count after each task (e.g., "3/5 tasks complete")
+- Show current iteration number
+- Show the executor result (which story completed, or "progress made")
+- Display progress count after each completed story (e.g., "3/5 tasks complete")
 - Announce review phase clearly
 - Show review results summary (N issues found)
 - Show fix story count
