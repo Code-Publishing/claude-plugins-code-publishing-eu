@@ -1,0 +1,20 @@
+{
+  "name": "99bottles-oop-handbook",
+  "version": "1.0.0",
+  "description": "OOP development methodology plugin based on Sandi Metz's '99 Bottles of OOP' and Uncle Bob's Clean Architecture. Guides AI agents through incremental, evidence-based refactoring with Shameless Green, Flocking Rules, and architectural discipline. Includes /99-new-feature, /99-refactor, and /99-review commands.",
+  "author": {
+    "name": "Karol Sotomski"
+  },
+  "categories": ["methodology", "refactoring", "architecture"],
+  "keywords": [
+    "oop",
+    "refactoring",
+    "clean-architecture",
+    "design-patterns",
+    "code-review",
+    "tdd",
+    "solid",
+    "sandi-metz",
+    "99-bottles"
+  ]
+}
