@@ -12,6 +12,15 @@
       "author": {
         "name": "Sotomski"
       }
+    },
+    {
+      "name": "99bottles-oop-handbook",
+      "source": "./99bottles-oop-handbook",
+      "description": "OOP development methodology plugin based on Sandi Metz's '99 Bottles of OOP' and Uncle Bob's Clean Architecture. Guides AI agents through incremental, evidence-based refactoring.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Karol Sotomski"
+      }
     }
   ]
 }
