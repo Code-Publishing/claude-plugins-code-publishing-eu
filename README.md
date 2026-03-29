@@ -52,6 +52,31 @@ Advanced autonomous coding loop with PRD-based task queue, progress tracking, an
 
 See [ralph-pro/README.md](ralph-pro/README.md) for full documentation.
 
+### 99bottles-oop-handbook
+
+An OOP development methodology plugin for Claude Code based on Sandi Metz's *99 Bottles of OOP* and Uncle Bob's *Clean Architecture*.
+
+**Install:**
+```bash
+/plugin install 99bottles-oop-handbook@claude-code-publishing-eu
+```
+
+**Features:**
+- Teaches object-oriented coding through incremental, evidence-based refactoring
+- Shameless Green approach for starting new features
+- Flocking Rules for step-by-step refactoring
+- Class extraction patterns
+- Replacing conditionals with polymorphism
+- Clean Architecture principles
+- Anti-patterns specific to AI agents
+
+**Commands:**
+- `/99-new-feature` - Start a new feature using TDD + Shameless Green
+- `/99-refactor` - Refactor existing code using the Flocking Rules
+- `/99-review` - Review code against handbook principles
+
+See [99bottles-oop-handbook/README.md](99bottles-oop-handbook/README.md) for full documentation.
+
 ## License
 
 MIT
